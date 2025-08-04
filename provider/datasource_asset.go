@@ -53,7 +53,7 @@ type AssetSearchResponse struct {
 func dataSourceAsset() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceAssetRead,
-		Description: "Data source to search for Freshservice assets by name, item_id, or asset_tag",
+		Description: "Data source to search for Freshservice assets by name, display_id, or asset_tag",
 
 		Schema: map[string]*schema.Schema{
 			// Search parameters (at least one required)
@@ -62,10 +62,10 @@ func dataSourceAsset() *schema.Resource {
 				Optional:    true,
 				Description: "Name of the asset to search for",
 			},
-			"item_id": {
-				Type:        schema.TypeString,
+			"display_id": {
+				Type:        schema.TypeInt,
 				Optional:    true,
-				Description: "Item ID of the asset to search for",
+				Description: "Display ID of the asset to search for",
 			},
 			"asset_tag": {
 				Type:        schema.TypeString,
@@ -85,10 +85,10 @@ func dataSourceAsset() *schema.Resource {
 				Computed:    true,
 				Description: "ID of the asset",
 			},
-			"display_id": {
-				Type:        schema.TypeInt,
+			"item_id": {
+				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Display ID of the asset",
+				Description: "Item ID of the asset",
 			},
 			"description": {
 				Type:        schema.TypeString,
@@ -223,16 +223,16 @@ func dataSourceAssetRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	// Validate that at least one search parameter is provided
 	name := d.Get("name").(string)
-	itemID := d.Get("item_id").(string)
+	displayID := d.Get("display_id").(int)
 	assetTag := d.Get("asset_tag").(string)
 	trashed := d.Get("trashed").(bool)
 
-	if name == "" && itemID == "" && assetTag == "" {
-		return diag.Errorf("At least one of 'name', 'item_id', or 'asset_tag' must be provided")
+	if name == "" && displayID == 0 && assetTag == "" {
+		return diag.Errorf("At least one of 'name', 'display_id', or 'asset_tag' must be provided")
 	}
 
 	// Build search query
-	searchQuery := buildSearchQuery(name, itemID, assetTag)
+	searchQuery := buildSearchQuery(name, displayID, assetTag)
 
 	// URL encode the search query
 	encodedQuery := url.QueryEscape(searchQuery)
@@ -378,7 +378,7 @@ func dataSourceAssetRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 // buildSearchQuery builds the search query string based on provided parameters
-func buildSearchQuery(name, itemID, assetTag string) string {
+func buildSearchQuery(name string, displayID int, assetTag string) string {
 	var queryParts []string
 
 	if name != "" {
@@ -387,9 +387,8 @@ func buildSearchQuery(name, itemID, assetTag string) string {
 		queryParts = append(queryParts, fmt.Sprintf("name:'%s'", escapedName))
 	}
 
-	if itemID != "" {
-		escapedItemID := escapeSearchValue(itemID)
-		queryParts = append(queryParts, fmt.Sprintf("item_id:'%s'", escapedItemID))
+	if displayID != 0 {
+		queryParts = append(queryParts, fmt.Sprintf("display_id:%d", displayID))
 	}
 
 	if assetTag != "" {

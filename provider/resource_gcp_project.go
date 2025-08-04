@@ -260,50 +260,41 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
 
-	// Build type_fields with updated values
-	typeFields := map[string]interface{}{}
-
-	if d.HasChange("project_id") {
-		typeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = d.Get("project_id").(string)
+	// Build request body with all current values (not just changed fields)
+	assetReq := GCPProjectAssetRequest{
+		Name:        d.Get("project_name").(string),
+		AssetTypeID: assetTypeID,
+		Description: d.Get("description").(string),
+		TypeFields:  map[string]interface{}{},
 	}
 
-	if d.HasChange("project_name") {
-		typeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = d.Get("project_name").(string)
+	// Always include all type_fields (not just changed ones)
+	if projectID := d.Get("project_id").(string); projectID != "" {
+		assetReq.TypeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = projectID
 	}
 
-	if d.HasChange("po_number") {
-		typeFields[fmt.Sprintf("po_%d", assetTypeID)] = d.Get("po_number").(string)
+	if projectName := d.Get("project_name").(string); projectName != "" {
+		assetReq.TypeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = projectName
 	}
 
-	if d.HasChange("owner") {
-		typeFields[fmt.Sprintf("owner_%d", assetTypeID)] = d.Get("owner").(string)
+	if poNumber := d.Get("po_number").(string); poNumber != "" {
+		assetReq.TypeFields[fmt.Sprintf("po_%d", assetTypeID)] = poNumber
 	}
 
-	if d.HasChange("approver") {
-		typeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = d.Get("approver").(string)
+	if owner := d.Get("owner").(string); owner != "" {
+		assetReq.TypeFields[fmt.Sprintf("owner_%d", assetTypeID)] = owner
 	}
 
-	if d.HasChange("environment") {
-		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = d.Get("environment").(string)
+	if approver := d.Get("approver").(string); approver != "" {
+		assetReq.TypeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = approver
 	}
 
-	if d.HasChange("active") {
-		typeFields[fmt.Sprintf("active_%d", assetTypeID)] = d.Get("active").(string)
+	if environment := d.Get("environment").(string); environment != "" {
+		assetReq.TypeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
 	}
 
-	// Build request body with only changed fields
-	assetReq := GCPProjectAssetRequest{}
-
-	if d.HasChange("project_name") {
-		assetReq.Name = d.Get("project_name").(string)
-	}
-
-	if d.HasChange("description") {
-		assetReq.Description = d.Get("description").(string)
-	}
-
-	if len(typeFields) > 0 {
-		assetReq.TypeFields = typeFields
+	if active := d.Get("active").(string); active != "" {
+		assetReq.TypeFields[fmt.Sprintf("active_%d", assetTypeID)] = active
 	}
 
 	// Convert request to JSON

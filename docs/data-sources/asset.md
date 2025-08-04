@@ -2,12 +2,12 @@
 page_title: "freshservice_asset Data Source - freshservice"
 subcategory: ""
 description: |-
-  Use this data source to search for existing Freshservice assets by name, item_id, or asset_tag.
+  Use this data source to search for existing Freshservice assets by name, display_id, or asset_tag.
 ---
 
 # freshservice_asset (Data Source)
 
-Use this data source to search for existing Freshservice assets by name, item_id, or asset_tag.
+Use this data source to search for existing Freshservice assets by name, display_id, or asset_tag.
 
 ## Example Usage
 
@@ -17,9 +17,9 @@ data "freshservice_asset" "laptop" {
   name = "Dell laptop"
 }
 
-# Search for an asset by item_id
-data "freshservice_asset" "by_item_id" {
-  item_id = "ITEM-12345"
+# Search for an asset by display_id
+data "freshservice_asset" "by_display_id" {
+  display_id = 3567
 }
 
 # Search for an asset by asset_tag
@@ -37,8 +37,10 @@ data "freshservice_asset" "trashed_asset" {
 output "asset_details" {
   value = {
     id          = data.freshservice_asset.laptop.id
+    display_id  = data.freshservice_asset.laptop.display_id
     name        = data.freshservice_asset.laptop.name
     asset_tag   = data.freshservice_asset.laptop.asset_tag
+    item_id     = data.freshservice_asset.laptop.item_id
     created_at  = data.freshservice_asset.laptop.created_at
   }
 }
@@ -51,14 +53,14 @@ output "asset_details" {
 At least one of the following search parameters must be provided:
 
 - `name` (String) Name of the asset to search for
-- `item_id` (String) Item ID of the asset to search for
+- `display_id` (Number) Display ID of the asset to search for
 - `asset_tag` (String) Asset tag to search for
 - `trashed` (Boolean) Include assets in trash (default: false)
 
 ### Read-Only
 
-- `id` (String) Display ID of the asset (used for identification and API calls)
-- `display_id` (Number) Display ID of the asset (same as id but as number)
+- `id` (Number) Internal ID of the asset
+- `item_id` (String) Item ID of the asset
 - `description` (String) Description of the asset
 - `asset_type_id` (Number) Asset type ID
 - `impact` (String) Impact level of the asset

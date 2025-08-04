@@ -246,42 +246,33 @@ func resourceAWSAccountUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
 
-	// Build type_fields with updated values
-	typeFields := map[string]interface{}{}
-
-	if d.HasChange("account_id") {
-		typeFields[fmt.Sprintf("account_id_%d", assetTypeID)] = d.Get("account_id").(string)
+	// Build request body with all current values (not just changed fields)
+	assetReq := AWSAccountAssetRequest{
+		Name:        d.Get("account_name").(string),
+		AssetTypeID: assetTypeID,
+		Description: d.Get("description").(string),
+		TypeFields:  map[string]interface{}{},
 	}
 
-	if d.HasChange("po_number") {
-		typeFields[fmt.Sprintf("po_%d", assetTypeID)] = d.Get("po_number").(string)
+	// Always include all type_fields (not just changed ones)
+	if accountID := d.Get("account_id").(string); accountID != "" {
+		assetReq.TypeFields[fmt.Sprintf("account_id_%d", assetTypeID)] = accountID
 	}
 
-	if d.HasChange("owner") {
-		typeFields[fmt.Sprintf("owner_%d", assetTypeID)] = d.Get("owner").(string)
+	if poNumber := d.Get("po_number").(string); poNumber != "" {
+		assetReq.TypeFields[fmt.Sprintf("po_%d", assetTypeID)] = poNumber
 	}
 
-	if d.HasChange("approver") {
-		typeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = d.Get("approver").(string)
+	if owner := d.Get("owner").(string); owner != "" {
+		assetReq.TypeFields[fmt.Sprintf("owner_%d", assetTypeID)] = owner
 	}
 
-	if d.HasChange("environment") {
-		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = d.Get("environment").(string)
+	if approver := d.Get("approver").(string); approver != "" {
+		assetReq.TypeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = approver
 	}
 
-	// Build request body with only changed fields
-	assetReq := AWSAccountAssetRequest{}
-
-	if d.HasChange("account_name") {
-		assetReq.Name = d.Get("account_name").(string)
-	}
-
-	if d.HasChange("description") {
-		assetReq.Description = d.Get("description").(string)
-	}
-
-	if len(typeFields) > 0 {
-		assetReq.TypeFields = typeFields
+	if environment := d.Get("environment").(string); environment != "" {
+		assetReq.TypeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
 	}
 
 	// Convert request to JSON

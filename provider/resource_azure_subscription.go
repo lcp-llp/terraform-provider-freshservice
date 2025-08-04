@@ -291,58 +291,49 @@ func resourceAzureSubscriptionUpdate(ctx context.Context, d *schema.ResourceData
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
 
-	// Build type_fields with updated values
-	typeFields := map[string]interface{}{}
-
-	if d.HasChange("tenant_id") {
-		typeFields[fmt.Sprintf("tenant_id_%d", assetTypeID)] = d.Get("tenant_id").(string)
+	// Build request body with all current values (not just changed fields)
+	assetReq := AzureSubscriptionAssetRequest{
+		Name:        d.Get("subscription_name").(string),
+		AssetTypeID: assetTypeID,
+		Description: d.Get("description").(string),
+		TypeFields:  map[string]interface{}{},
 	}
 
-	if d.HasChange("subscription_id") {
-		typeFields[fmt.Sprintf("subscription_id_%d", assetTypeID)] = d.Get("subscription_id").(string)
+	// Always include all type_fields (not just changed ones)
+	if tenantID := d.Get("tenant_id").(string); tenantID != "" {
+		assetReq.TypeFields[fmt.Sprintf("tenant_id_%d", assetTypeID)] = tenantID
 	}
 
-	if d.HasChange("po_number") {
-		typeFields[fmt.Sprintf("po_%d", assetTypeID)] = d.Get("po_number").(string)
+	if subscriptionID := d.Get("subscription_id").(string); subscriptionID != "" {
+		assetReq.TypeFields[fmt.Sprintf("subscription_id_%d", assetTypeID)] = subscriptionID
 	}
 
-	if d.HasChange("owner") {
-		typeFields[fmt.Sprintf("owner_%d", assetTypeID)] = d.Get("owner").(string)
+	if poNumber := d.Get("po_number").(string); poNumber != "" {
+		assetReq.TypeFields[fmt.Sprintf("po_%d", assetTypeID)] = poNumber
 	}
 
-	if d.HasChange("approver") {
-		typeFields[fmt.Sprintf("approver_object_%d", assetTypeID)] = d.Get("approver").(string)
+	if owner := d.Get("owner").(string); owner != "" {
+		assetReq.TypeFields[fmt.Sprintf("owner_%d", assetTypeID)] = owner
 	}
 
-	if d.HasChange("environment") {
-		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = d.Get("environment").(string)
+	if approver := d.Get("approver").(string); approver != "" {
+		assetReq.TypeFields[fmt.Sprintf("approver_object_%d", assetTypeID)] = approver
 	}
 
-	if d.HasChange("eacsp") {
-		typeFields[fmt.Sprintf("eacsp_%d", assetTypeID)] = d.Get("eacsp").(string)
+	if environment := d.Get("environment").(string); environment != "" {
+		assetReq.TypeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
 	}
 
-	if d.HasChange("active") {
-		typeFields[fmt.Sprintf("active_%d", assetTypeID)] = d.Get("active").(string)
+	if eacsp := d.Get("eacsp").(string); eacsp != "" {
+		assetReq.TypeFields[fmt.Sprintf("eacsp_%d", assetTypeID)] = eacsp
 	}
 
-	if d.HasChange("cloudockit") {
-		typeFields[fmt.Sprintf("cloudockit_%d", assetTypeID)] = d.Get("cloudockit").(string)
+	if active := d.Get("active").(string); active != "" {
+		assetReq.TypeFields[fmt.Sprintf("active_%d", assetTypeID)] = active
 	}
 
-	// Build request body with only changed fields
-	assetReq := AzureSubscriptionAssetRequest{}
-
-	if d.HasChange("subscription_name") {
-		assetReq.Name = d.Get("subscription_name").(string)
-	}
-
-	if d.HasChange("description") {
-		assetReq.Description = d.Get("description").(string)
-	}
-
-	if len(typeFields) > 0 {
-		assetReq.TypeFields = typeFields
+	if cloudockit := d.Get("cloudockit").(string); cloudockit != "" {
+		assetReq.TypeFields[fmt.Sprintf("cloudockit_%d", assetTypeID)] = cloudockit
 	}
 
 	// Convert request to JSON
