@@ -102,7 +102,7 @@ func resourceGCPProject() *schema.Resource {
 			"asset_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Default:     56000979438,
+				Default:     int64(56000979438),
 				Description: "Asset type ID for GCP project (default: 56000979438)",
 			},
 			"active": {

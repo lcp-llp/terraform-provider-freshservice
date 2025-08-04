@@ -107,7 +107,7 @@ func resourceAzureSubscription() *schema.Resource {
 			"asset_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Default:     56000416566,
+				Default:     int64(56000416566),
 				Description: "Asset type ID for Azure subscription (default: 56000416566)",
 			},
 			"eacsp": {
@@ -258,14 +258,20 @@ func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, 
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
-		// If asset not found, remove from state
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
-		}
 		return diag.FromErr(err)
 	}
 	defer resp.Body.Close()
+
+	// Check for 404 specifically
+	if resp.StatusCode == 404 {
+		d.SetId("")
+		return nil
+	}
+
+	// Check for other non-200 status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return diag.Errorf("API request failed with status %d", resp.StatusCode)
+	}
 
 	// Parse response
 	var assetResp AzureSubscriptionAssetResponse

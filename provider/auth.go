@@ -70,7 +70,12 @@ func (c *Config) DoRequest(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
-	// Check for API errors
+	// For 404 errors, return the response so caller can handle it
+	if resp.StatusCode == 404 {
+		return resp, nil
+	}
+
+	// Check for other API errors (but not 404)
 	if resp.StatusCode >= 400 {
 		defer resp.Body.Close()
 		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, resp.Status)

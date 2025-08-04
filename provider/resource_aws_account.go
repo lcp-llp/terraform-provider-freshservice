@@ -102,7 +102,7 @@ func resourceAWSAccount() *schema.Resource {
 			"asset_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Default:     56000947175,
+				Default:     int64(56000947175),
 				Description: "Asset type ID for AWS account (default: 56000947175)",
 			},
 			// Computed fields
