@@ -23,9 +23,10 @@ func Provider() *schema.Provider {
 		},
 		ConfigureContextFunc: configureProvider,
 		ResourcesMap: map[string]*schema.Resource{
-			"freshservice_asset_type":        resourceAssetType(),
+			"freshservice_asset_type":         resourceAssetType(),
 			"freshservice_azure_subscription": resourceAzureSubscription(),
-			"freshservice_aws_account":       resourceAWSAccount(),
+			"freshservice_aws_account":        resourceAWSAccount(),
+			"freshservice_gcp_project":        resourceGCPProject(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"freshservice_asset":      dataSourceAsset(),

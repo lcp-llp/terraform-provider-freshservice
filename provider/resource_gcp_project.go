@@ -12,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// AWSAccountAsset represents a Freshservice AWS Account asset
-type AWSAccountAsset struct {
+// GCPProjectAsset represents a Freshservice GCP Project asset
+type GCPProjectAsset struct {
 	ID           int                    `json:"id"`
 	DisplayID    int                    `json:"display_id"`
 	Name         string                 `json:"name"`
@@ -34,45 +34,45 @@ type AWSAccountAsset struct {
 	TypeFields   map[string]interface{} `json:"type_fields"`
 }
 
-// AWSAccountAssetResponse represents the API response for AWS account asset operations
-type AWSAccountAssetResponse struct {
-	Asset AWSAccountAsset `json:"asset"`
+// GCPProjectAssetResponse represents the API response for GCP project asset operations
+type GCPProjectAssetResponse struct {
+	Asset GCPProjectAsset `json:"asset"`
 }
 
-// AWSAccountAssetRequest represents the request body for AWS account asset operations
-type AWSAccountAssetRequest struct {
+// GCPProjectAssetRequest represents the request body for GCP project asset operations
+type GCPProjectAssetRequest struct {
 	Name        string                 `json:"name"`
 	AssetTypeID int                    `json:"asset_type_id"`
 	Description string                 `json:"description,omitempty"`
 	TypeFields  map[string]interface{} `json:"type_fields"`
 }
 
-func resourceAWSAccount() *schema.Resource {
+func resourceGCPProject() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceAWSAccountCreate,
-		ReadContext:   resourceAWSAccountRead,
-		UpdateContext: resourceAWSAccountUpdate,
-		DeleteContext: resourceAWSAccountDelete,
+		CreateContext: resourceGCPProjectCreate,
+		ReadContext:   resourceGCPProjectRead,
+		UpdateContext: resourceGCPProjectUpdate,
+		DeleteContext: resourceGCPProjectDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Description: "Manages a Freshservice AWS Account asset",
+		Description: "Manages a Freshservice GCP Project asset",
 
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of the AWS account asset",
+				Description: "ID of the GCP project asset",
 			},
-			"account_name": {
+			"project_name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Name of the AWS account",
+				Description: "Name of the GCP project",
 			},
-			"account_id": {
+			"project_id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "AWS account ID",
+				Description: "GCP project ID",
 			},
 			"po_number": {
 				Type:        schema.TypeString,
@@ -82,12 +82,12 @@ func resourceAWSAccount() *schema.Resource {
 			"owner": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Owner of the AWS account",
+				Description: "Owner of the GCP project",
 			},
 			"approver": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Approver for the AWS account",
+				Description: "Approver for the GCP project",
 			},
 			"environment": {
 				Type:        schema.TypeString,
@@ -97,13 +97,19 @@ func resourceAWSAccount() *schema.Resource {
 			"description": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Description of the AWS account asset",
+				Description: "Description of the GCP project asset",
 			},
 			"asset_type_id": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Default:     56000947175,
-				Description: "Asset type ID for AWS account (default: 56000947175)",
+				Default:     56000979438,
+				Description: "Asset type ID for GCP project (default: 56000979438)",
+			},
+			"active": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "Yes",
+				Description: "Active status (default: Yes)",
 			},
 			// Computed fields
 			"display_id": {
@@ -135,7 +141,7 @@ func resourceAWSAccount() *schema.Resource {
 	}
 }
 
-func resourceAWSAccountCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
 	// Get asset type ID
@@ -144,8 +150,12 @@ func resourceAWSAccountCreate(ctx context.Context, d *schema.ResourceData, meta 
 	// Build type_fields with the specific field names based on asset type ID
 	typeFields := map[string]interface{}{}
 
-	if accountID := d.Get("account_id").(string); accountID != "" {
-		typeFields[fmt.Sprintf("account_id_%d", assetTypeID)] = accountID
+	if projectID := d.Get("project_id").(string); projectID != "" {
+		typeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = projectID
+	}
+
+	if projectName := d.Get("project_name").(string); projectName != "" {
+		typeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = projectName
 	}
 
 	if poNumber := d.Get("po_number").(string); poNumber != "" {
@@ -164,9 +174,13 @@ func resourceAWSAccountCreate(ctx context.Context, d *schema.ResourceData, meta 
 		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
 	}
 
+	if active := d.Get("active").(string); active != "" {
+		typeFields[fmt.Sprintf("active_%d", assetTypeID)] = active
+	}
+
 	// Build request body
-	assetReq := AWSAccountAssetRequest{
-		Name:        d.Get("account_name").(string),
+	assetReq := GCPProjectAssetRequest{
+		Name:        d.Get("project_name").(string),
 		AssetTypeID: assetTypeID,
 		Description: d.Get("description").(string),
 		TypeFields:  typeFields,
@@ -192,7 +206,7 @@ func resourceAWSAccountCreate(ctx context.Context, d *schema.ResourceData, meta 
 	defer resp.Body.Close()
 
 	// Parse response
-	var assetResp AWSAccountAssetResponse
+	var assetResp GCPProjectAssetResponse
 	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
@@ -200,10 +214,10 @@ func resourceAWSAccountCreate(ctx context.Context, d *schema.ResourceData, meta 
 	// Set the resource ID and other computed fields
 	d.SetId(strconv.Itoa(assetResp.Asset.ID))
 
-	return setAWSAccountAssetData(d, &assetResp.Asset)
+	return setGCPProjectAssetData(d, &assetResp.Asset)
 }
 
-func resourceAWSAccountRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGCPProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
 	// Get the asset ID
@@ -229,15 +243,15 @@ func resourceAWSAccountRead(ctx context.Context, d *schema.ResourceData, meta in
 	defer resp.Body.Close()
 
 	// Parse response
-	var assetResp AWSAccountAssetResponse
+	var assetResp GCPProjectAssetResponse
 	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
 
-	return setAWSAccountAssetData(d, &assetResp.Asset)
+	return setGCPProjectAssetData(d, &assetResp.Asset)
 }
 
-func resourceAWSAccountUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
 	// Get the asset ID
@@ -249,8 +263,12 @@ func resourceAWSAccountUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	// Build type_fields with updated values
 	typeFields := map[string]interface{}{}
 
-	if d.HasChange("account_id") {
-		typeFields[fmt.Sprintf("account_id_%d", assetTypeID)] = d.Get("account_id").(string)
+	if d.HasChange("project_id") {
+		typeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = d.Get("project_id").(string)
+	}
+
+	if d.HasChange("project_name") {
+		typeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = d.Get("project_name").(string)
 	}
 
 	if d.HasChange("po_number") {
@@ -269,11 +287,15 @@ func resourceAWSAccountUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = d.Get("environment").(string)
 	}
 
-	// Build request body with only changed fields
-	assetReq := AWSAccountAssetRequest{}
+	if d.HasChange("active") {
+		typeFields[fmt.Sprintf("active_%d", assetTypeID)] = d.Get("active").(string)
+	}
 
-	if d.HasChange("account_name") {
-		assetReq.Name = d.Get("account_name").(string)
+	// Build request body with only changed fields
+	assetReq := GCPProjectAssetRequest{}
+
+	if d.HasChange("project_name") {
+		assetReq.Name = d.Get("project_name").(string)
 	}
 
 	if d.HasChange("description") {
@@ -305,15 +327,15 @@ func resourceAWSAccountUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	defer resp.Body.Close()
 
 	// Parse response
-	var assetResp AWSAccountAssetResponse
+	var assetResp GCPProjectAssetResponse
 	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
 
-	return setAWSAccountAssetData(d, &assetResp.Asset)
+	return setGCPProjectAssetData(d, &assetResp.Asset)
 }
 
-func resourceAWSAccountDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGCPProjectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
 	// Get the asset ID
@@ -343,9 +365,9 @@ func resourceAWSAccountDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-// setAWSAccountAssetData sets the AWS account asset data in the Terraform state
-func setAWSAccountAssetData(d *schema.ResourceData, asset *AWSAccountAsset) diag.Diagnostics {
-	if err := d.Set("account_name", asset.Name); err != nil {
+// setGCPProjectAssetData sets the GCP project asset data in the Terraform state
+func setGCPProjectAssetData(d *schema.ResourceData, asset *GCPProjectAsset) diag.Diagnostics {
+	if err := d.Set("project_name", asset.Name); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("description", asset.Description); err != nil {
@@ -373,8 +395,8 @@ func setAWSAccountAssetData(d *schema.ResourceData, asset *AWSAccountAsset) diag
 	// Extract values from type_fields
 	assetTypeID := asset.AssetTypeID
 	if asset.TypeFields != nil {
-		if accountID, ok := asset.TypeFields[fmt.Sprintf("account_id_%d", assetTypeID)].(string); ok {
-			if err := d.Set("account_id", accountID); err != nil {
+		if projectID, ok := asset.TypeFields[fmt.Sprintf("project_id_%d", assetTypeID)].(string); ok {
+			if err := d.Set("project_id", projectID); err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -399,6 +421,12 @@ func setAWSAccountAssetData(d *schema.ResourceData, asset *AWSAccountAsset) diag
 
 		if environment, ok := asset.TypeFields[fmt.Sprintf("environment_%d", assetTypeID)].(string); ok {
 			if err := d.Set("environment", environment); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		if active, ok := asset.TypeFields[fmt.Sprintf("active_%d", assetTypeID)].(string); ok {
+			if err := d.Set("active", active); err != nil {
 				return diag.FromErr(err)
 			}
 		}
