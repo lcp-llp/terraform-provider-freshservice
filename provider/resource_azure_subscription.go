@@ -248,17 +248,22 @@ func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, 
 	// Get the asset ID
 	id := d.Id()
 
-	// Create the request
+	// Debug: log the ID and endpoint being used
 	endpoint := fmt.Sprintf("/assets/%s", id)
+
+	// Create the request
 	req, err := config.NewRequest(ctx, "GET", endpoint, nil)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Failed to create request for asset %s: %s", id, err)
 	}
+
+	// Debug: log the full URL being requested
+	return diag.Errorf("DEBUG: Would request URL: %s (asset ID: %s)", req.URL.String(), id)
 
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("Request failed for asset %s: %s", id, err)
 	}
 	defer resp.Body.Close()
 
@@ -270,13 +275,13 @@ func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, 
 
 	// Check for other non-200 status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return diag.Errorf("API request failed with status %d", resp.StatusCode)
+		return diag.Errorf("API request failed with status %d for asset %s", resp.StatusCode, id)
 	}
 
 	// Parse response
 	var assetResp AzureSubscriptionAssetResponse
 	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
-		return diag.Errorf("Failed to decode response: %s", err)
+		return diag.Errorf("Failed to decode response for asset %s: %s", id, err)
 	}
 
 	return setAzureSubscriptionAssetData(d, &assetResp.Asset)
@@ -390,13 +395,20 @@ func resourceAzureSubscriptionDelete(ctx context.Context, d *schema.ResourceData
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
-		// If asset not found, it's already deleted
-		if resp != nil && resp.StatusCode == 404 {
-			return nil
-		}
 		return diag.FromErr(err)
 	}
 	defer resp.Body.Close()
+
+	// If asset not found, it's already deleted
+	if resp.StatusCode == 404 {
+		d.SetId("")
+		return nil
+	}
+
+	// Check for other errors
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return diag.Errorf("Failed to delete asset: API returned status %d", resp.StatusCode)
+	}
 
 	// Clear the resource ID
 	d.SetId("")
