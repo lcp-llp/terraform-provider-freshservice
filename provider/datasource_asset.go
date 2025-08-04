@@ -270,7 +270,7 @@ func dataSourceAssetRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	// Set the asset data
 	asset := searchResponse.Assets[0]
-	d.SetId(strconv.Itoa(asset.ID))
+	d.SetId(strconv.Itoa(asset.DisplayID))
 
 	if err := d.Set("id", asset.ID); err != nil {
 		return diag.FromErr(err)

@@ -236,8 +236,8 @@ func resourceAzureSubscriptionCreate(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
 
-	// Set the resource ID and other computed fields
-	d.SetId(strconv.Itoa(assetResp.Asset.ID))
+	// Set the resource ID using display_id (which is used for API calls) and other computed fields
+	d.SetId(strconv.Itoa(assetResp.Asset.DisplayID))
 
 	return setAzureSubscriptionAssetData(d, &assetResp.Asset)
 }
@@ -245,25 +245,20 @@ func resourceAzureSubscriptionCreate(ctx context.Context, d *schema.ResourceData
 func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
-	// Debug: log the ID and endpoint being used
-	endpoint := fmt.Sprintf("/assets/%s", id)
-
-	// Create the request
+	// Create the request using display_id
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "GET", endpoint, nil)
 	if err != nil {
-		return diag.Errorf("Failed to create request for asset %s: %s", id, err)
+		return diag.Errorf("Failed to create request for asset %s: %s", displayID, err)
 	}
-
-	// Debug: log the full URL being requested
-	return diag.Errorf("DEBUG: Would request URL: %s (asset ID: %s)", req.URL.String(), id)
 
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
-		return diag.Errorf("Request failed for asset %s: %s", id, err)
+		return diag.Errorf("Request failed for asset %s: %s", displayID, err)
 	}
 	defer resp.Body.Close()
 
@@ -275,13 +270,13 @@ func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, 
 
 	// Check for other non-200 status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return diag.Errorf("API request failed with status %d for asset %s", resp.StatusCode, id)
+		return diag.Errorf("API request failed with status %d for asset %s", resp.StatusCode, displayID)
 	}
 
 	// Parse response
 	var assetResp AzureSubscriptionAssetResponse
 	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
-		return diag.Errorf("Failed to decode response for asset %s: %s", id, err)
+		return diag.Errorf("Failed to decode response for asset %s: %s", displayID, err)
 	}
 
 	return setAzureSubscriptionAssetData(d, &assetResp.Asset)
@@ -290,8 +285,8 @@ func resourceAzureSubscriptionRead(ctx context.Context, d *schema.ResourceData, 
 func resourceAzureSubscriptionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
@@ -357,7 +352,7 @@ func resourceAzureSubscriptionUpdate(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Create the request
-	endpoint := fmt.Sprintf("/assets/%s", id)
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "PUT", endpoint, bytes.NewReader(jsonData))
 	if err != nil {
 		return diag.FromErr(err)
@@ -382,11 +377,11 @@ func resourceAzureSubscriptionUpdate(ctx context.Context, d *schema.ResourceData
 func resourceAzureSubscriptionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
 	// Create the request
-	endpoint := fmt.Sprintf("/assets/%s", id)
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "DELETE", endpoint, nil)
 	if err != nil {
 		return diag.FromErr(err)

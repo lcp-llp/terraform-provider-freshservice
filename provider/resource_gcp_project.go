@@ -211,8 +211,8 @@ func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
 
-	// Set the resource ID and other computed fields
-	d.SetId(strconv.Itoa(assetResp.Asset.ID))
+	// Set the resource ID using display_id (which is used for API calls) and other computed fields
+	d.SetId(strconv.Itoa(assetResp.Asset.DisplayID))
 
 	return setGCPProjectAssetData(d, &assetResp.Asset)
 }
@@ -220,11 +220,11 @@ func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceGCPProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
-	// Create the request
-	endpoint := fmt.Sprintf("/assets/%s", id)
+	// Create the request using display_id
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return diag.FromErr(err)
@@ -254,8 +254,8 @@ func resourceGCPProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
@@ -313,7 +313,7 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	// Create the request
-	endpoint := fmt.Sprintf("/assets/%s", id)
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "PUT", endpoint, bytes.NewReader(jsonData))
 	if err != nil {
 		return diag.FromErr(err)
@@ -338,11 +338,11 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 func resourceGCPProjectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(*Config)
 
-	// Get the asset ID
-	id := d.Id()
+	// Get the asset display ID (stored as Terraform resource ID)
+	displayID := d.Id()
 
 	// Create the request
-	endpoint := fmt.Sprintf("/assets/%s", id)
+	endpoint := fmt.Sprintf("/assets/%s", displayID)
 	req, err := config.NewRequest(ctx, "DELETE", endpoint, nil)
 	if err != nil {
 		return diag.FromErr(err)

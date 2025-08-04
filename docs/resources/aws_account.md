@@ -41,8 +41,8 @@ resource "freshservice_aws_account" "production" {
 
 ### Read-Only
 
-- `id` (String) ID of the AWS account asset
-- `display_id` (Number) Display ID of the asset
+- `id` (String) Display ID of the AWS account asset (used for API calls)
+- `display_id` (Number) Display ID of the asset (same as id but as number)
 - `asset_tag` (String) Asset tag
 - `created_at` (String) Creation timestamp of the asset
 - `updated_at` (String) Last update timestamp of the asset
@@ -50,8 +50,8 @@ resource "freshservice_aws_account" "production" {
 
 ## Import
 
-Import is supported using the following syntax:
+Import is supported using the display ID:
 
 ```shell
-terraform import freshservice_aws_account.example 123
+terraform import freshservice_aws_account.example 3567
 ```

@@ -57,8 +57,8 @@ At least one of the following search parameters must be provided:
 
 ### Read-Only
 
-- `id` (Number) ID of the asset
-- `display_id` (Number) Display ID of the asset
+- `id` (String) Display ID of the asset (used for identification and API calls)
+- `display_id` (Number) Display ID of the asset (same as id but as number)
 - `description` (String) Description of the asset
 - `asset_type_id` (Number) Asset type ID
 - `impact` (String) Impact level of the asset

@@ -43,8 +43,8 @@ resource "freshservice_gcp_project" "production" {
 
 ### Read-Only
 
-- `id` (String) ID of the GCP project asset
-- `display_id` (Number) Display ID of the asset
+- `id` (String) Display ID of the GCP project asset (used for API calls)
+- `display_id` (Number) Display ID of the asset (same as id but as number)
 - `asset_tag` (String) Asset tag
 - `created_at` (String) Creation timestamp of the asset
 - `updated_at` (String) Last update timestamp of the asset
@@ -52,8 +52,8 @@ resource "freshservice_gcp_project" "production" {
 
 ## Import
 
-Import is supported using the following syntax:
+Import is supported using the display ID:
 
 ```shell
-terraform import freshservice_gcp_project.example 123
+terraform import freshservice_gcp_project.example 3568
 ```
