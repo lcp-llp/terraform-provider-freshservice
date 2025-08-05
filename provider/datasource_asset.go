@@ -13,38 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Asset represents a Freshservice asset
-type Asset struct {
-	ID                  int       `json:"id"`
-	DisplayID           int       `json:"display_id"`
-	Name                string    `json:"name"`
-	Description         string    `json:"description"`
-	AssetTypeID         int       `json:"asset_type_id"`
-	Impact              string    `json:"impact"`
-	AuthorType          string    `json:"author_type"`
-	UsageType           string    `json:"usage_type"`
-	AssetTag            string    `json:"asset_tag"`
-	UserID              *int      `json:"user_id"`
-	LocationID          *int      `json:"location_id"`
-	DepartmentID        *int      `json:"department_id"`
-	AgentID             *int      `json:"agent_id"`
-	AssignedOn          *string   `json:"assigned_on"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
-	WorkspaceID         int       `json:"workspace_id"`
-	CreatedBySource     string    `json:"created_by_source"`
-	LastUpdatedBySource string    `json:"last_updated_by_source"`
-	CreatedByUser       *int      `json:"created_by_user"`
-	LastUpdatedByUser   *int      `json:"last_updated_by_user"`
-	Sources             []string  `json:"sources"`
-	SerialNumber        string    `json:"serial_number,omitempty"`
-	MacAddresses        []string  `json:"mac_addresses,omitempty"`
-	IPAddresses         []string  `json:"ip_addresses,omitempty"`
-	UUID                string    `json:"uuid,omitempty"`
-	ItemID              string    `json:"item_id,omitempty"`
-	IMEINumber          string    `json:"imei_number,omitempty"`
-}
-
 // AssetSearchResponse represents the API response for asset search
 type AssetSearchResponse struct {
 	Assets []Asset `json:"assets"`
