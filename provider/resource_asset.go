@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -139,7 +140,7 @@ func resourceAsset() *schema.Resource {
 			"type_fields": {
 				Type:        schema.TypeMap,
 				Optional:    true,
-				Description: "Custom type fields specific to the asset type. Keys should follow the pattern 'fieldname_assettypeid'",
+				Description: "Custom type fields specific to the asset type. Field names will automatically have the asset type ID appended (e.g., 'product' becomes 'product_25')",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -254,9 +255,12 @@ func resourceAssetCreate(ctx context.Context, d *schema.ResourceData, meta inter
 	// Build type_fields from the type_fields map
 	typeFields := make(map[string]interface{})
 	if typeFieldsRaw, ok := d.GetOk("type_fields"); ok {
+		assetTypeID := d.Get("asset_type_id").(int)
 		for key, value := range typeFieldsRaw.(map[string]interface{}) {
+			// Automatically append the asset type ID to the field name
+			fieldKey := fmt.Sprintf("%s_%d", key, assetTypeID)
 			// Convert string values to appropriate types based on common patterns
-			typeFields[key] = convertTypeFieldValue(value.(string))
+			typeFields[fieldKey] = convertTypeFieldValue(value.(string))
 		}
 	}
 
@@ -372,9 +376,12 @@ func resourceAssetUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 	// Build type_fields from the type_fields map
 	typeFields := make(map[string]interface{})
 	if typeFieldsRaw, ok := d.GetOk("type_fields"); ok {
+		assetTypeID := d.Get("asset_type_id").(int)
 		for key, value := range typeFieldsRaw.(map[string]interface{}) {
+			// Automatically append the asset type ID to the field name
+			fieldKey := fmt.Sprintf("%s_%d", key, assetTypeID)
 			// Convert string values to appropriate types based on common patterns
-			typeFields[key] = convertTypeFieldValue(value.(string))
+			typeFields[fieldKey] = convertTypeFieldValue(value.(string))
 		}
 	}
 
@@ -582,10 +589,18 @@ func setAssetData(d *schema.ResourceData, asset *Asset) diag.Diagnostics {
 	}
 
 	// Set type_fields - convert back to map[string]string for Terraform
+	// Strip the asset type ID suffix from field names
 	if asset.TypeFields != nil {
 		typeFieldsMap := make(map[string]string)
+		assetTypeIDSuffix := fmt.Sprintf("_%d", asset.AssetTypeID)
+
 		for key, value := range asset.TypeFields {
-			typeFieldsMap[key] = fmt.Sprintf("%v", value)
+			// Remove the asset type ID suffix if present
+			cleanKey := key
+			if strings.HasSuffix(key, assetTypeIDSuffix) {
+				cleanKey = strings.TrimSuffix(key, assetTypeIDSuffix)
+			}
+			typeFieldsMap[cleanKey] = fmt.Sprintf("%v", value)
 		}
 		if err := d.Set("type_fields", typeFieldsMap); err != nil {
 			return diag.FromErr(err)
