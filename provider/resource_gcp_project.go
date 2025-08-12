@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"strconv"
 	"time"
 
@@ -147,36 +149,47 @@ func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
 
+	log.Printf("[DEBUG] Creating GCP project asset with type ID: %d", assetTypeID)
+
 	// Build type_fields with the specific field names based on asset type ID
 	typeFields := map[string]interface{}{}
 
 	if projectID := d.Get("project_id").(string); projectID != "" {
 		typeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = projectID
+		log.Printf("[DEBUG] Added project_id_%d: %s", assetTypeID, projectID)
 	}
 
 	if projectName := d.Get("project_name").(string); projectName != "" {
 		typeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = projectName
+		log.Printf("[DEBUG] Added project_name_%d: %s", assetTypeID, projectName)
 	}
 
 	if poNumber := d.Get("po_number").(string); poNumber != "" {
 		typeFields[fmt.Sprintf("po_%d", assetTypeID)] = poNumber
+		log.Printf("[DEBUG] Added po_%d: %s", assetTypeID, poNumber)
 	}
 
 	if owner := d.Get("owner").(string); owner != "" {
 		typeFields[fmt.Sprintf("owner_%d", assetTypeID)] = owner
+		log.Printf("[DEBUG] Added owner_%d: %s", assetTypeID, owner)
 	}
 
 	if approver := d.Get("approver").(string); approver != "" {
 		typeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = approver
+		log.Printf("[DEBUG] Added approved_by_%d: %s", assetTypeID, approver)
 	}
 
 	if environment := d.Get("environment").(string); environment != "" {
 		typeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
+		log.Printf("[DEBUG] Added environment_%d: %s", assetTypeID, environment)
 	}
 
 	if active := d.Get("active").(string); active != "" {
 		typeFields[fmt.Sprintf("active_%d", assetTypeID)] = active
+		log.Printf("[DEBUG] Added active_%d: %s", assetTypeID, active)
 	}
+
+	log.Printf("[DEBUG] Final type_fields for GCP project: %+v", typeFields)
 
 	// Build request body
 	assetReq := GCPProjectAssetRequest{
@@ -186,11 +199,16 @@ func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 		TypeFields:  typeFields,
 	}
 
+	log.Printf("[DEBUG] GCP project asset request payload: Name=%s, AssetTypeID=%d, Description=%s",
+		assetReq.Name, assetReq.AssetTypeID, assetReq.Description)
+
 	// Convert request to JSON
 	jsonData, err := json.Marshal(assetReq)
 	if err != nil {
 		return diag.Errorf("Failed to marshal request: %s", err)
 	}
+
+	log.Printf("[DEBUG] GCP project request JSON: %s", string(jsonData))
 
 	// Create the request
 	req, err := config.NewRequest(ctx, "POST", "/assets", bytes.NewReader(jsonData))
@@ -198,18 +216,38 @@ func resourceGCPProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
+	log.Printf("[DEBUG] Making GCP project API request to: %s", req.URL.String())
+	log.Printf("[DEBUG] Request headers: %+v", req.Header)
+
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
+		log.Printf("[ERROR] GCP project API request failed: %s", err)
 		return diag.FromErr(err)
 	}
 	defer resp.Body.Close()
 
+	log.Printf("[DEBUG] GCP project API response status: %d %s", resp.StatusCode, resp.Status)
+	log.Printf("[DEBUG] Response headers: %+v", resp.Header)
+
+	// Read response body for logging before decoding
+	respBodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[ERROR] Failed to read GCP project response body: %s", err)
+		return diag.Errorf("Failed to read response body: %s", err)
+	}
+
+	log.Printf("[DEBUG] GCP project response body: %s", string(respBodyBytes))
+
 	// Parse response
 	var assetResp GCPProjectAssetResponse
-	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
+	if err := json.Unmarshal(respBodyBytes, &assetResp); err != nil {
+		log.Printf("[ERROR] Failed to decode GCP project response: %s", err)
+		log.Printf("[ERROR] Response body was: %s", string(respBodyBytes))
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
+
+	log.Printf("[DEBUG] Successfully created GCP project asset with ID: %d", assetResp.Asset.DisplayID)
 
 	// Set the resource ID using display_id (which is used for API calls) and other computed fields
 	d.SetId(strconv.Itoa(assetResp.Asset.DisplayID))
@@ -260,6 +298,8 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	// Get asset type ID
 	assetTypeID := d.Get("asset_type_id").(int)
 
+	log.Printf("[DEBUG] Updating GCP project asset %s with type ID: %d", displayID, assetTypeID)
+
 	// Build request body with all current values (not just changed fields)
 	assetReq := GCPProjectAssetRequest{
 		Name:        d.Get("project_name").(string),
@@ -271,37 +311,48 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	// Always include all type_fields (not just changed ones)
 	if projectID := d.Get("project_id").(string); projectID != "" {
 		assetReq.TypeFields[fmt.Sprintf("project_id_%d", assetTypeID)] = projectID
+		log.Printf("[DEBUG] Added project_id_%d: %s", assetTypeID, projectID)
 	}
 
 	if projectName := d.Get("project_name").(string); projectName != "" {
 		assetReq.TypeFields[fmt.Sprintf("project_name_%d", assetTypeID)] = projectName
+		log.Printf("[DEBUG] Added project_name_%d: %s", assetTypeID, projectName)
 	}
 
 	if poNumber := d.Get("po_number").(string); poNumber != "" {
 		assetReq.TypeFields[fmt.Sprintf("po_%d", assetTypeID)] = poNumber
+		log.Printf("[DEBUG] Added po_%d: %s", assetTypeID, poNumber)
 	}
 
 	if owner := d.Get("owner").(string); owner != "" {
 		assetReq.TypeFields[fmt.Sprintf("owner_%d", assetTypeID)] = owner
+		log.Printf("[DEBUG] Added owner_%d: %s", assetTypeID, owner)
 	}
 
 	if approver := d.Get("approver").(string); approver != "" {
 		assetReq.TypeFields[fmt.Sprintf("approved_by_%d", assetTypeID)] = approver
+		log.Printf("[DEBUG] Added approved_by_%d: %s", assetTypeID, approver)
 	}
 
 	if environment := d.Get("environment").(string); environment != "" {
 		assetReq.TypeFields[fmt.Sprintf("environment_%d", assetTypeID)] = environment
+		log.Printf("[DEBUG] Added environment_%d: %s", assetTypeID, environment)
 	}
 
 	if active := d.Get("active").(string); active != "" {
 		assetReq.TypeFields[fmt.Sprintf("active_%d", assetTypeID)] = active
+		log.Printf("[DEBUG] Added active_%d: %s", assetTypeID, active)
 	}
+
+	log.Printf("[DEBUG] Final type_fields for GCP project update: %+v", assetReq.TypeFields)
 
 	// Convert request to JSON
 	jsonData, err := json.Marshal(assetReq)
 	if err != nil {
 		return diag.Errorf("Failed to marshal request: %s", err)
 	}
+
+	log.Printf("[DEBUG] GCP project update request JSON: %s", string(jsonData))
 
 	// Create the request
 	endpoint := fmt.Sprintf("/assets/%s", displayID)
@@ -310,18 +361,36 @@ func resourceGCPProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
+	log.Printf("[DEBUG] Making GCP project update API request to: %s", req.URL.String())
+
 	// Execute the request
 	resp, err := config.DoRequest(req)
 	if err != nil {
+		log.Printf("[ERROR] GCP project update API request failed: %s", err)
 		return diag.FromErr(err)
 	}
 	defer resp.Body.Close()
 
+	log.Printf("[DEBUG] GCP project update API response status: %d %s", resp.StatusCode, resp.Status)
+
+	// Read response body for logging before decoding
+	respBodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[ERROR] Failed to read GCP project update response body: %s", err)
+		return diag.Errorf("Failed to read response body: %s", err)
+	}
+
+	log.Printf("[DEBUG] GCP project update response body: %s", string(respBodyBytes))
+
 	// Parse response
 	var assetResp GCPProjectAssetResponse
-	if err := json.NewDecoder(resp.Body).Decode(&assetResp); err != nil {
+	if err := json.Unmarshal(respBodyBytes, &assetResp); err != nil {
+		log.Printf("[ERROR] Failed to decode GCP project update response: %s", err)
+		log.Printf("[ERROR] Response body was: %s", string(respBodyBytes))
 		return diag.Errorf("Failed to decode response: %s", err)
 	}
+
+	log.Printf("[DEBUG] Successfully updated GCP project asset with ID: %d", assetResp.Asset.DisplayID)
 
 	return setGCPProjectAssetData(d, &assetResp.Asset)
 }
