@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -82,4 +83,155 @@ func (c *Config) DoRequest(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// CreateTicket creates a new ticket via the Freshservice API
+func (c *Config) CreateTicket(ctx context.Context, ticket Ticket) (*Ticket, error) {
+	ticketData := map[string]interface{}{
+		"subject":     ticket.Subject,
+		"description": ticket.Description,
+		"priority":    ticket.Priority,
+		"status":      ticket.Status,
+	}
+
+	// Add optional fields if they exist
+	if ticket.Email != "" {
+		ticketData["email"] = ticket.Email
+	}
+	if ticket.WorkspaceID != 0 {
+		ticketData["workspace_id"] = ticket.WorkspaceID
+	}
+	if ticket.GroupID != 0 {
+		ticketData["group_id"] = ticket.GroupID
+	}
+	if ticket.ResponderID != 0 {
+		ticketData["responder_id"] = ticket.ResponderID
+	}
+	if len(ticket.Assets) > 0 {
+		ticketData["assets"] = ticket.Assets
+	}
+
+	body, err := json.Marshal(ticketData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ticket data: %w", err)
+	}
+
+	req, err := c.NewRequest(ctx, "POST", "/tickets", strings.NewReader(string(body)))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var ticketResp TicketResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ticketResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &ticketResp.Ticket, nil
+}
+
+// GetTicket retrieves a ticket by ID
+func (c *Config) GetTicket(ctx context.Context, ticketID string) (*Ticket, error) {
+	endpoint := fmt.Sprintf("/tickets/%s", ticketID)
+
+	req, err := c.NewRequest(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return nil, fmt.Errorf("ticket with ID %s not found", ticketID)
+	}
+
+	var ticketResp TicketResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ticketResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &ticketResp.Ticket, nil
+}
+
+// UpdateTicket updates an existing ticket
+func (c *Config) UpdateTicket(ctx context.Context, ticketID string, ticket Ticket) (*Ticket, error) {
+	ticketData := map[string]interface{}{
+		"subject":     ticket.Subject,
+		"description": ticket.Description,
+		"priority":    ticket.Priority,
+		"status":      ticket.Status,
+	}
+
+	// Add optional fields if they exist
+	if ticket.Email != "" {
+		ticketData["email"] = ticket.Email
+	}
+	if ticket.WorkspaceID != 0 {
+		ticketData["workspace_id"] = ticket.WorkspaceID
+	}
+	if ticket.GroupID != 0 {
+		ticketData["group_id"] = ticket.GroupID
+	}
+	if ticket.ResponderID != 0 {
+		ticketData["responder_id"] = ticket.ResponderID
+	}
+	if len(ticket.Assets) > 0 {
+		ticketData["assets"] = ticket.Assets
+	}
+
+	body, err := json.Marshal(ticketData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ticket data: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/tickets/%s", ticketID)
+	req, err := c.NewRequest(ctx, "PUT", endpoint, strings.NewReader(string(body)))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var ticketResp TicketResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ticketResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &ticketResp.Ticket, nil
+}
+
+// DeleteTicket deletes a ticket by ID
+func (c *Config) DeleteTicket(ctx context.Context, ticketID string) error {
+	endpoint := fmt.Sprintf("/tickets/%s", ticketID)
+
+	req, err := c.NewRequest(ctx, "DELETE", endpoint, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.DoRequest(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		// Ticket already deleted or doesn't exist
+		return nil
+	}
+
+	return nil
 }
