@@ -1,12 +1,8 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -78,23 +74,23 @@ func resourceTicket() *schema.Resource {
 	}
 }
 
-// Asset represents an asset associated with a ticket
-type Asset struct {
+// TicketAsset represents an asset associated with a ticket
+type TicketAsset struct {
 	DisplayID int `json:"display_id"`
 }
 
 // Ticket represents a Freshservice ticket
 type Ticket struct {
-	ID          int     `json:"id,omitempty"`
-	Subject     string  `json:"subject"`
-	Description string  `json:"description"`
-	Priority    int     `json:"priority"`
-	Status      int     `json:"status"`
-	Email       string  `json:"email,omitempty"`
-	WorkspaceID int     `json:"workspace_id,omitempty"`
-	GroupID     int     `json:"group_id,omitempty"`
-	ResponderID int     `json:"responder_id,omitempty"`
-	Assets      []Asset `json:"assets,omitempty"`
+	ID          int           `json:"id,omitempty"`
+	Subject     string        `json:"subject"`
+	Description string        `json:"description"`
+	Priority    int           `json:"priority"`
+	Status      int           `json:"status"`
+	Email       string        `json:"email,omitempty"`
+	WorkspaceID int           `json:"workspace_id,omitempty"`
+	GroupID     int           `json:"group_id,omitempty"`
+	ResponderID int           `json:"responder_id,omitempty"`
+	Assets      []TicketAsset `json:"assets,omitempty"`
 }
 
 // TicketResponse represents the API response when creating/reading a ticket
@@ -102,24 +98,24 @@ type TicketResponse struct {
 	Ticket Ticket `json:"ticket"`
 }
 
-// expandAssets converts Terraform list to Asset structs
-func expandAssets(assets []interface{}) []Asset {
+// expandAssets converts Terraform list to TicketAsset structs
+func expandAssets(assets []interface{}) []TicketAsset {
 	if len(assets) == 0 {
 		return nil
 	}
 
-	result := make([]Asset, len(assets))
+	result := make([]TicketAsset, len(assets))
 	for i, asset := range assets {
 		assetMap := asset.(map[string]interface{})
-		result[i] = Asset{
+		result[i] = TicketAsset{
 			DisplayID: assetMap["display_id"].(int),
 		}
 	}
 	return result
 }
 
-// flattenAssets converts Asset structs to Terraform list
-func flattenAssets(assets []Asset) []interface{} {
+// flattenAssets converts TicketAsset structs to Terraform list
+func flattenAssets(assets []TicketAsset) []interface{} {
 	if len(assets) == 0 {
 		return nil
 	}
@@ -202,7 +198,6 @@ func resourceTicketRead(ctx context.Context, d *schema.ResourceData, m interface
 
 func resourceTicketUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*Config)
-	var diags diag.Diagnostics
 
 	ticketID := d.Id()
 
