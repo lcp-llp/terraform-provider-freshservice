@@ -21,14 +21,16 @@ resource "freshservice_ticket" "example" {
   email       = "user@company.com"
 }
 
-# Create a ticket with workspace and assets
-resource "freshservice_ticket" "with_assets" {
+# Create a ticket with workspace, group, responder and assets
+resource "freshservice_ticket" "with_assignment" {
   subject      = "Hardware Issue - Multiple Laptops"
   description  = "Multiple laptops in the office are experiencing hardware issues"
   priority     = 3
   status       = 2
   email        = "it-support@company.com"
   workspace_id = 1
+  group_id     = 5
+  responder_id = 1001
 
   assets {
     display_id = 8
@@ -66,6 +68,8 @@ resource "freshservice_ticket" "urgent" {
 
 - `email` (String) The email of the ticket requester.
 - `workspace_id` (Number) The workspace ID associated with the ticket.
+- `group_id` (Number) ID of the group to which the ticket has been assigned.
+- `responder_id` (Number) ID of the agent to whom the ticket has been assigned.
 - `assets` (Block List) The assets associated with the ticket. (see [below for nested schema](#nestedblock--assets))
 
 ### Read-Only

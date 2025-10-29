@@ -101,6 +101,12 @@ func (c *Config) CreateTicket(ctx context.Context, ticket Ticket) (*Ticket, erro
 	if ticket.WorkspaceID != 0 {
 		ticketData["workspace_id"] = ticket.WorkspaceID
 	}
+	if ticket.GroupID != 0 {
+		ticketData["group_id"] = ticket.GroupID
+	}
+	if ticket.ResponderID != 0 {
+		ticketData["responder_id"] = ticket.ResponderID
+	}
 	if len(ticket.Assets) > 0 {
 		ticketData["assets"] = ticket.Assets
 	}
@@ -171,6 +177,12 @@ func (c *Config) UpdateTicket(ctx context.Context, ticketID string, ticket Ticke
 	}
 	if ticket.WorkspaceID != 0 {
 		ticketData["workspace_id"] = ticket.WorkspaceID
+	}
+	if ticket.GroupID != 0 {
+		ticketData["group_id"] = ticket.GroupID
+	}
+	if ticket.ResponderID != 0 {
+		ticketData["responder_id"] = ticket.ResponderID
 	}
 	if len(ticket.Assets) > 0 {
 		ticketData["assets"] = ticket.Assets

@@ -50,6 +50,16 @@ func resourceTicket() *schema.Resource {
                 Optional:    true,
                 Description: "The workspace ID associated with the ticket.",
             },
+            "group_id": {
+                Type:        schema.TypeInt,
+                Optional:    true,
+                Description: "ID of the group to which the ticket has been assigned.",
+            },
+            "responder_id": {
+                Type:        schema.TypeInt,
+                Optional:    true,
+                Description: "ID of the agent to whom the ticket has been assigned.",
+            },
             "assets": {
                 Type:        schema.TypeList,
                 Optional:    true,
@@ -82,6 +92,8 @@ type Ticket struct {
 	Status      int     `json:"status"`
 	Email       string  `json:"email,omitempty"`
 	WorkspaceID int     `json:"workspace_id,omitempty"`
+	GroupID     int     `json:"group_id,omitempty"`
+	ResponderID int     `json:"responder_id,omitempty"`
 	Assets      []Asset `json:"assets,omitempty"`
 }
 
@@ -140,6 +152,12 @@ func resourceTicketCreate(ctx context.Context, d *schema.ResourceData, m interfa
 	if workspaceID, ok := d.GetOk("workspace_id"); ok {
 		ticket.WorkspaceID = workspaceID.(int)
 	}
+	if groupID, ok := d.GetOk("group_id"); ok {
+		ticket.GroupID = groupID.(int)
+	}
+	if responderID, ok := d.GetOk("responder_id"); ok {
+		ticket.ResponderID = responderID.(int)
+	}
 	if assets, ok := d.GetOk("assets"); ok {
 		ticket.Assets = expandAssets(assets.([]interface{}))
 	}
@@ -175,6 +193,8 @@ func resourceTicketRead(ctx context.Context, d *schema.ResourceData, m interface
 	d.Set("status", resp.Status)
 	d.Set("email", resp.Email)
 	d.Set("workspace_id", resp.WorkspaceID)
+	d.Set("group_id", resp.GroupID)
+	d.Set("responder_id", resp.ResponderID)
 	d.Set("assets", flattenAssets(resp.Assets))
 
 	return diags
@@ -200,6 +220,12 @@ func resourceTicketUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 	if workspaceID, ok := d.GetOk("workspace_id"); ok {
 		ticket.WorkspaceID = workspaceID.(int)
+	}
+	if groupID, ok := d.GetOk("group_id"); ok {
+		ticket.GroupID = groupID.(int)
+	}
+	if responderID, ok := d.GetOk("responder_id"); ok {
+		ticket.ResponderID = responderID.(int)
 	}
 	if assets, ok := d.GetOk("assets"); ok {
 		ticket.Assets = expandAssets(assets.([]interface{}))
