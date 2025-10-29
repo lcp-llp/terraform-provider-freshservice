@@ -28,6 +28,7 @@ func Provider() *schema.Provider {
 			"freshservice_azure_subscription": resourceAzureSubscription(),
 			"freshservice_aws_account":        resourceAWSAccount(),
 			"freshservice_gcp_project":        resourceGCPProject(),
+			"freshservice_ticket":             resourceTicket(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"freshservice_asset":      dataSourceAsset(),
