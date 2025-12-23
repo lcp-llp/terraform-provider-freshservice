@@ -132,7 +132,7 @@ func resourceAzureSubscription() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Order ID associated with the asset",
-			}
+			},
 			// Computed fields
 			"display_id": {
 				Type:        schema.TypeInt,
@@ -501,6 +501,8 @@ func setAzureSubscriptionAssetData(d *schema.ResourceData, asset *AzureSubscript
 			if err := d.Set("order_id", orderID); err != nil {
 				return diag.FromErr(err)
 			}
+		}
+
 	}
 
 	return nil
