@@ -128,6 +128,11 @@ func resourceAzureSubscription() *schema.Resource {
 				Default:     "Yes",
 				Description: "Cloudockit field (default: Yes)",
 			},
+			"order_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Order ID associated with the asset",
+			}
 			// Computed fields
 			"display_id": {
 				Type:        schema.TypeInt,
@@ -201,6 +206,10 @@ func resourceAzureSubscriptionCreate(ctx context.Context, d *schema.ResourceData
 
 	if cloudockit := d.Get("cloudockit").(string); cloudockit != "" {
 		typeFields[fmt.Sprintf("cloudockit_%d", assetTypeID)] = cloudockit
+	}
+
+	if order_id := d.Get("order_id").(string); order_id != "" {
+		typeFields[fmt.Sprintf("orderid_%d", assetTypeID)] = order_id
 	}
 
 	// Build request body
@@ -336,6 +345,10 @@ func resourceAzureSubscriptionUpdate(ctx context.Context, d *schema.ResourceData
 		assetReq.TypeFields[fmt.Sprintf("cloudockit_%d", assetTypeID)] = cloudockit
 	}
 
+	if order_id := d.Get("order_id").(string); order_id != "" {
+		assetReq.TypeFields[fmt.Sprintf("orderid_%d", assetTypeID)] = order_id
+	}
+
 	// Convert request to JSON
 	jsonData, err := json.Marshal(assetReq)
 	if err != nil {
@@ -428,7 +441,6 @@ func setAzureSubscriptionAssetData(d *schema.ResourceData, asset *AzureSubscript
 	if err := d.Set("workspace_id", asset.WorkspaceID); err != nil {
 		return diag.FromErr(err)
 	}
-
 	// Extract values from type_fields
 	assetTypeID := asset.AssetTypeID
 	if asset.TypeFields != nil {
@@ -485,6 +497,10 @@ func setAzureSubscriptionAssetData(d *schema.ResourceData, asset *AzureSubscript
 				return diag.FromErr(err)
 			}
 		}
+		if orderID, ok := asset.TypeFields[fmt.Sprintf("orderid_%d", assetTypeID)].(string); ok {
+			if err := d.Set("order_id", orderID); err != nil {
+				return diag.FromErr(err)
+			}
 	}
 
 	return nil
