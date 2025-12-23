@@ -46,6 +46,7 @@ resource "freshservice_azure_subscription" "production" {
 - `eacsp` (String) EA/CSP field (default: "CSP")
 - `active` (String) Active status (default: "Yes")
 - `cloudockit` (String) Cloudockit field (default: "Yes")
+- `order_id` (String) The order id.
 
 ### Read-Only
 
