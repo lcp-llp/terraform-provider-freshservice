@@ -91,3 +91,4 @@ At least one of the following search parameters must be provided:
 - If no assets are found, the data source will return an error.
 - Search results cannot be sorted and are returned by default sorted by created_at in descending order.
 - Search queries are case-insensitive and support partial matching.
+- The data source maps the API response to a dedicated `AssetDetails` structure, so it exposes the richer metadata (assigned_on, sources, creator IDs, etc.) that the resource does not manage directly.

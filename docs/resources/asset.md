@@ -18,7 +18,6 @@ resource "freshservice_asset" "laptop" {
   description   = "Dell Latitude 5520 laptop"
   asset_type_id = 25
   impact        = "medium"
-  usage_type    = "permanent"
   
   type_fields = {
     "product"               = "10"
@@ -42,12 +41,6 @@ resource "freshservice_asset" "server" {
   description   = "Main production web server"
   asset_type_id = 30
   impact        = "high"
-  usage_type    = "permanent"
-  user_id       = 1001
-  location_id   = 5
-  department_id = 10
-  agent_id      = 2001
-  group_id      = 15
   
   type_fields = {
     "hostname"     = "prod-web-01"
@@ -80,13 +73,7 @@ output "asset_details" {
 ### Optional
 
 - `description` (String) Description of the asset
-- `impact` (String) Impact level of the asset (low, medium, high). Default: "low"
-- `usage_type` (String) Usage type of the asset (permanent, loaner). Default: "permanent"
-- `user_id` (Number) User ID assigned to the asset
-- `location_id` (Number) Location ID of the asset
-- `department_id` (Number) Department ID of the asset
-- `agent_id` (Number) Agent ID assigned to the asset
-- `group_id` (Number) Group ID assigned to the asset
+- `impact` (String) Impact level of the asset
 - `type_fields` (Map of String) Custom type fields specific to the asset type. Field names will automatically have the asset type ID appended (e.g., 'product' becomes 'product_25')
 
 ### Read-Only
@@ -94,22 +81,6 @@ output "asset_details" {
 - `id` (String) ID of the asset (contains display_id value)
 - `display_id` (Number) Display ID of the asset
 - `asset_tag` (String) Asset tag
-- `author_type` (String) Author type of the asset
-- `assigned_on` (String) Date when the asset was assigned
-- `created_at` (String) Creation timestamp of the asset
-- `updated_at` (String) Last update timestamp of the asset
-- `workspace_id` (Number) Workspace ID of the asset
-- `created_by_source` (String) Source that created the asset
-- `last_updated_by_source` (String) Source that last updated the asset
-- `created_by_user` (Number) User who created the asset
-- `last_updated_by_user` (Number) User who last updated the asset
-- `sources` (List of String) List of sources for the asset
-- `serial_number` (String) Serial number of the asset
-- `mac_addresses` (List of String) MAC addresses of the asset
-- `ip_addresses` (List of String) IP addresses of the asset
-- `uuid` (String) UUID of the asset
-- `item_id` (String) Item ID of the asset
-- `imei_number` (String) IMEI number of the asset
 
 ## Import
 
@@ -162,3 +133,5 @@ Freshservice uses both internal IDs and display IDs for assets:
 - Import operations use the display_id
 
 This ensures proper state management and avoids 404 errors during resource operations.
+
+If you need access to metadata such as assignment details, creator information, or asset sources, use the `freshservice_asset` data source instead of relying on the resource state.
